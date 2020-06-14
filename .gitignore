@@ -3,3 +3,5 @@ datasets/
 chore/
 .idea/
 .idea/**/*
+playground/
+dask-worker-space/
