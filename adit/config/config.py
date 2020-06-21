@@ -5,7 +5,9 @@ import sys
 import configparser
 from typing import Union
 
-import adit.const as const
+import adit.constants as const
+
+__all__ = ['ConfigManager']
 
 
 class ConfigManager:

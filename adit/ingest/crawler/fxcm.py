@@ -6,6 +6,8 @@ import datetime as dt
 from adit.config import ConfigManager
 from fxcmpy import fxcmpy_tick_data_reader as tdr
 
+__all__ = ['FXCMCrawler']
+
 
 class FXCMCrawler:
     def __init__(self):
@@ -35,10 +37,6 @@ class FXCMCrawler:
             pass
 
 
-
-
-
-
 # con = fxcmpy.fxcmpy(access_token = const.FXCM_TOKEN, log_level = 'error')
 # instruments = con.get_instruments_for_candles()
 # print(instruments)
@@ -55,13 +53,3 @@ end = dt.datetime(2020, 5, 31)
 dr = tdr('EURUSD', start, end, verbosity=True)
 raw_data = dr.get_raw_data()
 print(raw_data.info())
-
-
-
-
-
-
-
-
-
-

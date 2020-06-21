@@ -4,6 +4,8 @@ from adit.config import ConfigManager
 from typing import Union
 import inspect
 
+__all__ = ['CheckPoint', 'etcd_CheckPoint']
+
 
 class CheckPoint:
     _CONFIG_SECTION = "adit.checkpoint"
@@ -14,7 +16,7 @@ class CheckPoint:
     @classmethod
     def get_instance(cls):
         if cls._INSTANCE is None:
-            instance_cls = globals().get(cls._ENGINE+"_CheckPoint")
+            instance_cls = globals().get(cls._ENGINE + "_CheckPoint")
             assert inspect.isclass(instance_cls), "The given checkpoint engine is unknown."
             cls._INSTANCE = instance_cls()
 
