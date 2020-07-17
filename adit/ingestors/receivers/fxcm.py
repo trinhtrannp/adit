@@ -29,7 +29,9 @@ class FXCMReceiver:
 
     def start(self) -> None:
         try:
-            assert self.access_token is not None, 
+            assert self.access_token is not None, ""
+        except:
+            pass
         self.runing_task = self.asyncio_loop.create_task(self.run())
 
     def stop(self) -> None:

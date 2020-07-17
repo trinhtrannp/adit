@@ -1,7 +1,8 @@
 import os
 import platform
+import psutil
 
-__all__ = ['is_windows', 'is_arm', 'is_linux', 'is_x64', 'is_x86', 'is_macos', 'get_platform']
+__all__ = ['is_windows', 'is_arm', 'is_linux', 'is_x64', 'is_x86', 'is_macos', 'get_platform', 'get_ncores', 'get_nthreads']
 
 OS_NAME = os.name  # nt
 P_SYSTEM = platform.system()  # Windows
@@ -44,3 +45,12 @@ def get_platform() -> str:
     os = "windows" if is_windows() else "linux" if is_linux() else "macos" if is_macos() else "unknown"
     arch = "x64" if is_x64() else "x86" if is_x86() else "arm" if is_arm() else "00"
     return os + "_" + arch
+
+
+def get_ncores() -> int:
+    return psutil.cpu_count()
+
+
+# TODO: if cpu supprot hyper threading, the number of threads = N*ncores
+def get_nthreads() -> int:
+    return get_ncores()

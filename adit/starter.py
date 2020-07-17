@@ -5,7 +5,7 @@ import time
 import logging.config
 
 from adit.config import Config
-from adit.controllers import DfsController, DaskController
+from adit.controllers import DfsController, DaskController, EventLoop
 from adit import constants as const
 
 # TODO: move the initialization of this into a class or a function and then report user if the environment have not been set
@@ -71,23 +71,33 @@ def start_stream_engine(mode: str = None, args: dict = None) -> None:
     pass
 
 
+def start_ingestor():
+    logger = logging.getLogger(os.path.basename(__file__))
+    from adit.ingestors import FXCMCrawler
+    logger.info("Starting ingestor....")
+    crawler = FXCMCrawler()
+    logger.info("Starting FXCM crawler....")
+    crawler.start()
+
+
 def start_event_loop() -> None:
     logger = logging.getLogger(os.path.basename(__file__))
     logger.info(f"Starting Main Loop...")
-    while True:
-        time.sleep(0.5)
+    EventLoop.instance().start()
 
 
 def start(mode: str = None, args: dict = None) -> None:
     logger = logging.getLogger(os.path.basename(__file__))
     try:
         init_logging()
+        logger = logging.getLogger(os.path.basename(__file__))
         init_config(mode=mode, args=args)
         start_dfs(mode=mode)
         from adit.dashboard import data_dashboard
         data_dashboard.init(mode=mode)
         start_dask(mode=mode)
         start_stream_engine(mode=mode, args=args)
+        start_ingestor()
         start_event_loop()
     except Exception as ex:
         logger.error(f"Failed to start Adit int {mode} mode", exc_info=ex)

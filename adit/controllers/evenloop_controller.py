@@ -22,9 +22,6 @@ class EventLoop:
         if name in self.taskmap:
             raise Exception("A task with the same name is already in the loop.")
 
-        if not self.loop.is_running():
-            raise Exception("Current event loop have stoped.")
-
         self.taskmap[name] = self.loop.create_task(func(self.queue, **funcArgs))
 
     def stop_task(self, name: str) -> None:

@@ -21,11 +21,11 @@ class DfsController:
 
     _SERVER_COMMANDS = {
         # TODO: make ip configurable because someone may one to choose a bin it to a specific network interface
-        "mvfs-servers": "server -s3=true -filer=true -dir {datadir} -master.dir {masterdir} -ip {ip} -ip.bind {ip} -volume.max 10"
+        "mvfs-servers": "server -s3=true -filer=true -dir {datadir} -master.dir {masterdir} -ip {ip} -ip.bind {ip} -volume.max 1000"
     }
     _CLIENT_COMMANDS = {
         # TODO: make ip configurable because someone may one to choose a bin it to a specific network interface
-        "volume-server": 'volume -ip {ip} -ip.bind {ip} -dir {datadir} -max 10 -mserver {masterip}:{masterport}',
+        "volume-server": 'volume -ip {ip} -ip.bind {ip} -dir {datadir} -max 1000 -mserver {masterip}:{masterport}',
         "s3-server": "s3 -filer {masterip}:{filerport}"
     }
 

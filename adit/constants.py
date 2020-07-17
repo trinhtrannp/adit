@@ -47,6 +47,8 @@ DEFAULT_CLUSTER_PASS = "aditadmin"
 
 DEFAULT_EVENT_LOOP_QUEUE_SIZE = "50"
 
+DEFAULT_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 WEED_VERSION = "1.82"
 WEED_URLS = {
     'linux_arm': f'https://github.com/chrislusf/seaweedfs/releases/download/{WEED_VERSION}/linux_arm.tar.gz',

@@ -1,32 +1,32 @@
 from __future__ import annotations
 
-import os
 import asyncio
 import logging
 import time
-import dateutil
+import numpy as np
 import pandas as pd
-import datetime as dt
+from datetime import datetime, timedelta
 
 import fxcmpy
-from fxcmpy import fxcmpy_tick_data_reader as tdr
 
 from adit.config import Config
-from adit.ingestors import AbstractIngestor
-from adit.controllers import EventLoop
+from adit.controllers import EventLoop, TileDB
+import adit.constants as const
 
 __all__ = ['FXCMCrawler']
 
 
 # TODO: current implementation using asyncio -> we need to move to dask distributed scheduler instead.
-class FXCMCrawler(AbstractIngestor):
+class FXCMCrawler:
     TASK_NAME = "fxcm-crawler"
+    __CRAWLER_CHECKPOINT = "crawler-checkpoint"
 
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.evl = EventLoop.instance()
         self.config = Config.instance()
+        self.tiledb = TileDB.instance()
         self.enabled = self.config.get_bool("crawlers", "fxcm")
         self.runing_task = None
         self.fxcm_conn = None
@@ -36,10 +36,9 @@ class FXCMCrawler(AbstractIngestor):
                 self.user = self.config.get_str("fxcm", "user")
                 self.pwd = self.config.get_str("fxcm", "pwd")
                 self.access_token = self.config.get_str("fxcm", "token")
-                self.frequency = self.config.get_int("fxcm", "frequency", 300)  # default 5 mins
+                self.frequency = self.config.get_int("fxcm", "frequency", 60)  # default 5 mins
                 self.period = self.config.get_str("fxcm", "period", "m1")  # default 1 min
-                self.ccypairs = self.config.get_str("fxcm", "ccypairs", "").split(os.linesep)
-                self.begin_timestamp = s
+                self.ccypairs = self.config.get_str("fxcm", "ccypairs", "").strip().split("\n")
 
     def get_conn(self):
         if self.fxcm_conn is None:
@@ -61,8 +60,25 @@ class FXCMCrawler(AbstractIngestor):
         self.evl.stop_task(self.TASK_NAME)
 
     async def _crawl_pair(self, pair, queue):
+        pairname = pair.replace("/", "")
+        last_timestamp = self.tiledb.get_kv(self.__CRAWLER_CHECKPOINT+"-"+pairname, pairname)
+        if last_timestamp is None:
+            data_domain = self.tiledb.get_data_domain('raw', pairname)
+            last_timestamp = data_domain[1]
+
+        delta_second = 300
+        # start = datetime.fromtimestamp(last_timestamp.astype('O')/1e9)
+        start = datetime.utcfromtimestamp(last_timestamp.astype('O')/1e9)
+        stop = start + timedelta(seconds=delta_second)
+        self.logger.info(f"crawling {pair} from {start} to {stop}")
         fxcm_conn = self.get_conn()
-        df = fxcm_conn.get_candles(instrument=pair, period=self.period)
+        df = fxcm_conn.get_candles(instrument=pair, period=self.period, start=start, stop=stop)
+        df.index = pd.to_datetime(df.index)
+        if df is not None and not df.empty and len(df.index) > 0:
+            self.tiledb.store_kv(self.__CRAWLER_CHECKPOINT+"-"+pairname, pairname, last_timestamp + np.timedelta64(delta_second, 's'))
+            self.tiledb.store_df(datatype="raw", name=pairname, df=df, sparse=True, data_df=True)
+        else:
+            self.logger.info(f"crawled data of {pair} from {start} to {stop} is empty")
 
     async def _crawl(self, queue):
         for pair in self.ccypairs:
