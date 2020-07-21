@@ -1,11 +1,11 @@
 import os
 import sys
 import logging
-import time
 import logging.config
 
 from adit.config import Config
-from adit.controllers import DfsController, DaskController, EventLoop
+from adit.controllers import DfsController, DaskController, EventLoopController
+from adit.dashboard import AditWebApp
 from adit import constants as const
 
 # TODO: move the initialization of this into a class or a function and then report user if the environment have not been set
@@ -58,11 +58,25 @@ def start_dfs(mode: str = None) -> None:
     dfs_controller.start(mode=mode)
 
 
-def start_dask(mode: str = None) -> None:
+def start_dask_and_webapp(mode: str = None) -> None:
     logger = logging.getLogger(os.path.basename(__file__))
-    logger.info(f"Starting Dask...")
     dask_controller = DaskController.instance()
+    if mode == const.SERVER_MODE:
+        webapp = AditWebApp.instance()
+
+    logger.info(f"Init Dask...")
+    dask_controller.init(mode=mode)
+
+    if mode == const.SERVER_MODE:
+        logger.info(f"Init Adit Web App ...")
+        webapp.init()
+
+    logger.info(f"Start Dask...")
     dask_controller.start(mode=mode)
+
+    if mode == const.SERVER_MODE:
+        logger.info(f"Start Adit Web App...")
+        webapp.start(mode=mode)
 
 
 def start_stream_engine(mode: str = None, args: dict = None) -> None:
@@ -83,7 +97,7 @@ def start_ingestor():
 def start_event_loop() -> None:
     logger = logging.getLogger(os.path.basename(__file__))
     logger.info(f"Starting Main Loop...")
-    EventLoop.instance().start()
+    EventLoopController.instance().start()
 
 
 def start(mode: str = None, args: dict = None) -> None:
@@ -93,9 +107,7 @@ def start(mode: str = None, args: dict = None) -> None:
         logger = logging.getLogger(os.path.basename(__file__))
         init_config(mode=mode, args=args)
         start_dfs(mode=mode)
-        from adit.dashboard import data_dashboard
-        data_dashboard.init(mode=mode)
-        start_dask(mode=mode)
+        start_dask_and_webapp(mode=mode)
         start_stream_engine(mode=mode, args=args)
         start_ingestor()
         start_event_loop()

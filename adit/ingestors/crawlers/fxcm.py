@@ -10,8 +10,7 @@ from datetime import datetime, timedelta
 import fxcmpy
 
 from adit.config import Config
-from adit.controllers import EventLoop, TileDB
-import adit.constants as const
+from adit.controllers import EventLoopController, TileDBController, TPOOL
 
 __all__ = ['FXCMCrawler']
 
@@ -21,12 +20,14 @@ class FXCMCrawler:
     TASK_NAME = "fxcm-crawler"
     __CRAWLER_CHECKPOINT = "crawler-checkpoint"
 
+    __RETRY_LIMIT = 3
+
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.evl = EventLoop.instance()
+        self.evl = EventLoopController.instance()
         self.config = Config.instance()
-        self.tiledb = TileDB.instance()
+        self.tiledb = TileDBController.instance()
         self.enabled = self.config.get_bool("crawlers", "fxcm")
         self.runing_task = None
         self.fxcm_conn = None
@@ -43,7 +44,17 @@ class FXCMCrawler:
     def get_conn(self):
         if self.fxcm_conn is None:
             self.fxcm_conn = fxcmpy.fxcmpy(access_token=self.access_token, log_level='debug')
+        elif self.fxcm_conn.connection_status != 'established' or not self.fxcm_conn.is_connected():
+            self.fxcm_conn.connect()
         return self.fxcm_conn
+
+    def get_candle(self, fxcm_conn, pair, start, stop):
+        try:
+            df = fxcm_conn.get_candles(instrument=pair, period=self.period, start=start, stop=stop)
+            return df
+        except Exception as ex:
+            self.logger.fatal(f"Failed to retrieve data for {pair} from {start} to {stop}", exc_info=ex)
+            return None
 
     def start(self) -> None:
         if not self.enabled:
@@ -70,15 +81,21 @@ class FXCMCrawler:
         # start = datetime.fromtimestamp(last_timestamp.astype('O')/1e9)
         start = datetime.utcfromtimestamp(last_timestamp.astype('O')/1e9)
         stop = start + timedelta(seconds=delta_second)
-        self.logger.info(f"crawling {pair} from {start} to {stop}")
-        fxcm_conn = self.get_conn()
-        df = fxcm_conn.get_candles(instrument=pair, period=self.period, start=start, stop=stop)
-        df.index = pd.to_datetime(df.index)
-        if df is not None and not df.empty and len(df.index) > 0:
-            self.tiledb.store_kv(self.__CRAWLER_CHECKPOINT+"-"+pairname, pairname, last_timestamp + np.timedelta64(delta_second, 's'))
-            self.tiledb.store_df(datatype="raw", name=pairname, df=df, sparse=True, data_df=True)
-        else:
-            self.logger.info(f"crawled data of {pair} from {start} to {stop} is empty")
+        if stop <= (datetime.now() - timedelta(seconds=delta_second)): # only crawl data lag 300 from now
+            self.logger.info(f"crawling {pair} from {start} to {stop}")
+            fxcm_conn = await self.evl.get_loop().run_in_executor(TPOOL, self.get_conn)
+            for retried in range(0, self.__RETRY_LIMIT):  # retried until we get data or reach the retry limit
+                df = await self.evl.get_loop().run_in_executor(TPOOL, self.get_candle, fxcm_conn, pair, start, stop)
+                if df is not None and not df.empty and len(df.index) > 0:
+                    df.index = pd.to_datetime(df.index)
+                    self.tiledb.store_kv(self.__CRAWLER_CHECKPOINT+"-"+pairname, pairname, last_timestamp + np.timedelta64(delta_second, 's'))
+                    self.tiledb.store_df(datatype="raw", name=pairname, df=df, sparse=True, data_df=True)
+                    break
+                elif retried >= (self.__RETRY_LIMIT - 1):
+                    self.logger.error(f"Crawled data of {pair} from {start} to {stop} is empty. Skiping this time range")
+                    self.tiledb.store_kv(self.__CRAWLER_CHECKPOINT + "-" + pairname, pairname, last_timestamp + np.timedelta64(delta_second, 's'))
+                else:
+                    self.logger.info(f"crawled data of {pair} from {start} to {stop} is empty. Will retry.")
 
     async def _crawl(self, queue):
         for pair in self.ccypairs:

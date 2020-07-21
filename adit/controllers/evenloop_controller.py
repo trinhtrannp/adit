@@ -5,10 +5,10 @@ from typing import Dict, Callable
 
 from adit.config import Config
 
-__all__ = ['EventLoop']
+__all__ = ['EventLoopController']
 
 
-class EventLoop:
+class EventLoopController:
     _INSTANCE = None
 
     def __init__(self):
@@ -45,7 +45,7 @@ class EventLoop:
         self.loop.close()
 
     @classmethod
-    def instance(cls) -> EventLoop:
+    def instance(cls) -> EventLoopController:
         if cls._INSTANCE is None:
-            cls._INSTANCE = EventLoop()
+            cls._INSTANCE = EventLoopController()
         return cls._INSTANCE

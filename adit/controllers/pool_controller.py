@@ -1,13 +1,8 @@
-from __future__ import absolute_import
-
-from concurrent.futures import ProcessPoolExecutor
+import concurrent.futures
 
 from adit.utils import *
 
-__all__ = ['get_ppool']
+__all__ = ['PPOOL', 'TPOOL']
 
-P_POOL = ProcessPoolExecutor(max_workers=get_ncores())
-
-
-def get_ppool() -> ProcessPoolExecutor:
-    return P_POOL
+PPOOL = concurrent.futures.ProcessPoolExecutor(max_workers=get_ncores()*2)
+TPOOL = concurrent.futures.ThreadPoolExecutor(max_workers=get_ncores()*2)

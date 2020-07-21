@@ -10,10 +10,10 @@ from adit.config import Config
 import adit.constants as const
 from adit.utils import *
 
-__all__ = ['TileDB']
+__all__ = ['TileDBController']
 
 
-class TileDB:  ## example can be found in E:\python-env\msthesis\Lib\site-packages\tiledb\tests
+class TileDBController:
     _INSTANCE = None
 
     META_BUCKET = "s3://adit-meta"
@@ -200,5 +200,5 @@ class TileDB:  ## example can be found in E:\python-env\msthesis\Lib\site-packag
     @classmethod
     def instance(cls):
         if cls._INSTANCE is None:
-            cls._INSTANCE = TileDB()
+            cls._INSTANCE = TileDBController()
         return cls._INSTANCE

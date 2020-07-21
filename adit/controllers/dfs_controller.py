@@ -83,6 +83,9 @@ class DfsController:
                     self.logger.error(f"Cannot even kill process {pname}, please check and manually kill it", exc_info=killex)
                     pass
 
+    def stop(self):
+        self.shutdown()
+
     @classmethod
     def instance(cls):
         if cls._INSTANCE is None:

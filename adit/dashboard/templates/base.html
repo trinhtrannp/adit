@@ -2,10 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>Dask Diagnostic UI</title>
+    <title>Adit Dashboard</title>
     <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-    <link rel="stylesheet" href="statics/css/base.css"/>
-    <link rel="shortcut icon" href="statics/images/favicon.ico"/>
+    <link rel="stylesheet" href="dask/statics/css/base.css"/>
+    <link rel="shortcut icon" href="dask/adit-statics/images/aditfavicon.ico"/>
     {% block resources %}
     {% block css_resources %}
     {{ bokeh_css | indent(8) if bokeh_css }}
@@ -20,9 +20,9 @@
   <body>
     <div class="navbar" id="myTopnav">
       <ul>
-        <li id="dask-logo">
-          <a href="https://dask.org/">
-            <img src="statics/images/dask-logo.svg"></img>
+        <li id="adit-logo">
+          <a href="https://pypi.org/project/adit/">
+            <img src="dask/adit-statics/images/adit-logo.svg"></img>
           </a>
         </li>
         {% for page in pages %}
@@ -32,7 +32,7 @@
         {% endfor %}
         <li id="navbar-toggle-icon">
           <a href="javascript:void(0);" onclick="myFunction()">
-            <img src="statics/images/fa-bars.svg"></img>
+            <img src="dask/statics/images/fa-bars.svg"></img>
           </a>
         </li>
       </ul>

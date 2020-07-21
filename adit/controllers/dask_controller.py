@@ -6,7 +6,7 @@ from subprocess import Popen
 
 from adit.config import Config
 from adit import constants as const
-from adit.controllers.evenloop_controller import EventLoop
+from adit.controllers.evenloop_controller import EventLoopController
 from adit.utils import *
 
 from dask.distributed import Scheduler, Worker
@@ -28,7 +28,7 @@ class DaskController:
         self.workerdir: str = os.path.join(self.daskdir, 'worker')
         self.masterip: str = self.config.get_str(section='adit', key='server_ip', default='127.0.0.1')
         self.workers = {}
-        self.evenloop = EventLoop.instance()
+        self.evenloop = EventLoopController.instance()
         self.dfsprocs: Dict[str, Popen] = dict()
 
     def _start(self):
@@ -36,9 +36,8 @@ class DaskController:
             self.logger.info(f"starting {name}")
             self.evenloop.shedule_task(name=name, func=worker.start)
 
-    def start(self, mode: str = None) -> None:
-        self.logger.info(f"Starting DASK with {mode} mode")
-
+    def init(self, mode):
+        self.logger.info(f"Initializing DASK with {mode} mode")
         if mode is const.SERVER_MODE:
             self.dask_scheduler = DaskScheduler(work_dir=self.schedulerdir)
 
@@ -57,12 +56,17 @@ class DaskController:
             self.logger.error(f"DASK is started in wrong mode, it can only be 'server' or 'client'")
             raise Exception(f"DASK is started in wrong mode, it can only be 'server' or 'client'")
 
+    def start(self, mode: str = None) -> None:
+        self.logger.info(f"Starting DASK with {mode} mode")
         self._start()
 
     def shutdown(self):
         for name, worker in self.workers.items():
             self.logger.info(f"Shutting down {name}")
             self.evenloop.shedule_task(name=name, func=worker.stop)
+
+    def stop(self):
+        self.shutdown()
 
     @classmethod
     def instance(cls):
@@ -75,7 +79,7 @@ class DaskScheduler:
     # TODO: allow user to customize dask scheduler startup
     def __init__(self, work_dir):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.scheduler = Scheduler(port=const.DASK_SCHEDULER_PORT, dashboard=True)
+        self.scheduler = Scheduler(port=const.DASK_SCHEDULER_PORT, dashboard=True, http_prefix="/dask")
 
     async def start(self, queue, **kwargs):
         self.logger.info("Starting DASK Scheduler ... ")
@@ -110,7 +114,8 @@ class DaskWorker:
                              scheduler_port=scheduler_port,
                              nthreads=get_nthreads(),
                              dashboard=True,
-                             local_directory=work_dir)
+                             local_directory=work_dir,
+                             http_prefix="/dask")
 
     async def start(self, queue, **kwargs):
         self.logger.info("Starting DASK worker ....")

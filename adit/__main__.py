@@ -5,6 +5,8 @@ from adit import starter, installer
 from adit import constants as const
 from adit import shutdown_handler
 
+import multiprocessing
+
 
 @click.group()
 def cli() -> None:
@@ -29,6 +31,7 @@ def client(server_ip: str = None) -> None:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     logging.basicConfig(
         format='[%(asctime)s][%(levelname)8s] %(filename)s:%(lineno)s | %(name)s.%(funcName)s() - %(message)s',
         level=logging.DEBUG)
