@@ -9,10 +9,10 @@ from adit import constants as const
 from adit.controllers.evenloop_controller import EventLoopController
 from adit.utils import *
 
-from dask.distributed import Scheduler, Worker
+from dask.distributed import Scheduler, Worker, Client
 
 
-__all__ = ['DaskController', 'DaskScheduler', 'DaskWorker']
+__all__ = ['DaskController', 'DaskSchedulerWrapper', 'DaskWorkerWrapper']
 
 
 class DaskController:
@@ -30,35 +30,42 @@ class DaskController:
         self.workers = {}
         self.evenloop = EventLoopController.instance()
         self.dfsprocs: Dict[str, Popen] = dict()
-
-    def _start(self):
-        for name, worker in self.workers.items():
-            self.logger.info(f"starting {name}")
-            self.evenloop.shedule_task(name=name, func=worker.start)
+        self.dask_client = None
 
     def init(self, mode):
         self.logger.info(f"Initializing DASK with {mode} mode")
         if mode is const.SERVER_MODE:
-            self.dask_scheduler = DaskScheduler(work_dir=self.schedulerdir)
+            self.dask_scheduler = DaskSchedulerWrapper(work_dir=self.schedulerdir)
 
-            self.dask_worker = DaskWorker(work_dir=self.workerdir,
-                                          scheduler_ip=self.masterip,
-                                          scheduler_port=const.DASK_SCHEDULER_PORT)
+            self.dask_worker = DaskWorkerWrapper(work_dir=self.workerdir,
+                                                 scheduler_ip=self.masterip,
+                                                 scheduler_port=const.DASK_SCHEDULER_PORT)
 
-            self.workers = {'dask-scheduler': self.dask_scheduler, 'dask-worker': self.dask_worker}
+            self.dask_client = DaskClientWrapper(scheduler_ip=self.masterip,
+                                                 scheduler_port=const.DASK_SCHEDULER_PORT)
+
+            self.workers = {'dask-scheduler': self.dask_scheduler,
+                            'dask-worker': self.dask_worker,
+                            'dask-client': self.dask_client}
         elif mode is const.CLIENT_MODE:
-            self.dask_worker = DaskWorker(work_dir=self.workerdir,
-                                          scheduler_ip=self.masterip,
-                                          scheduler_port=const.DASK_SCHEDULER_PORT)
+            self.dask_worker = DaskWorkerWrapper(work_dir=self.workerdir,
+                                                 scheduler_ip=self.masterip,
+                                                 scheduler_port=const.DASK_SCHEDULER_PORT)
 
-            self.workers = {'dask-worker': self.dask_worker}
+            self.dask_client = DaskClientWrapper(scheduler_ip=self.masterip,
+                                                 scheduler_port=const.DASK_SCHEDULER_PORT)
+
+            self.workers = {'dask-worker': self.dask_worker,
+                            'dask-client': self.dask_client}
         else:
             self.logger.error(f"DASK is started in wrong mode, it can only be 'server' or 'client'")
             raise Exception(f"DASK is started in wrong mode, it can only be 'server' or 'client'")
 
     def start(self, mode: str = None) -> None:
         self.logger.info(f"Starting DASK with {mode} mode")
-        self._start()
+        for name, worker in self.workers.items():
+            self.logger.info(f"starting {name}")
+            self.evenloop.shedule_task(name=name, func=worker.start)
 
     def shutdown(self):
         for name, worker in self.workers.items():
@@ -68,6 +75,15 @@ class DaskController:
     def stop(self):
         self.shutdown()
 
+    def get_dask_client(self):
+        return self.dask_client.client
+
+    def get_dask_scheduler(self):
+        return self.dask_scheduler.scheduler
+
+    def get_dask_worker(self):
+        return self.dask_worker.worker
+
     @classmethod
     def instance(cls):
         if cls._INSTANCE is None:
@@ -75,7 +91,7 @@ class DaskController:
         return cls._INSTANCE
 
 
-class DaskScheduler:
+class DaskSchedulerWrapper:
     # TODO: allow user to customize dask scheduler startup
     def __init__(self, work_dir):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -104,7 +120,7 @@ class DaskScheduler:
             self.logger.error("Failed to close Dask Scheduler", exc_info=ex)
 
 
-class DaskWorker:
+class DaskWorkerWrapper:
     # TODO: allow user to customize resource, and more settings for Dask-Worker
     def __init__(self, work_dir, scheduler_ip, scheduler_port):
 
@@ -137,3 +153,24 @@ class DaskWorker:
                 stopped = True
         except Exception as ex:
             self.logger.error("Failed to forcibly close Dask worker. Try again...", exc_info=ex)
+
+
+class DaskClientWrapper:
+    # TODO: allow user to customize resource, and more settings for Dask-Client
+    def __init__(self, scheduler_ip, scheduler_port):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.__scheduler_ip = scheduler_ip
+        self.__scheduler_port = scheduler_port
+        self.client = None
+
+    async def start(self, queue, **kwargs):
+        import socket
+        self.logger.info("Starting DASK client ....")
+        self.client = Client(address=f'{self.__scheduler_ip}:{self.__scheduler_port}', timeout=30, name=socket.gethostname())
+
+    async def stop(self, queue, **kwargs):
+        self.logger.info("Stoping DASK client")
+        try:
+            await self.client.close(timeout=30)
+        except Exception as ex:
+            self.logger.error("Failed to gracefully close Dask client.", exc_info=ex)

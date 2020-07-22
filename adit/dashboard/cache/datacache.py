@@ -11,6 +11,7 @@ __all__ = ['DataMonitorCache']
 
 class DataMonitorCache:
     _INSTANCE = None
+    _TASK_NAME = 'data-cache-update'
 
     _DEFAULT_CCYPAIR = ['EURUSD', 'USDJPY', 'EURJPY']
 
@@ -72,7 +73,7 @@ class DataMonitorCache:
 
     async def update(self, queue):
         self.logger.info("updating current data cache")
-        DELAY = 2 # 2 seconds
+        DELAY = 1 # 1 seconds
         while True:
             try:
                 for pair in self.pairs:
@@ -83,10 +84,10 @@ class DataMonitorCache:
                 break
 
     def start_periodic_update(self):
-        self.evl.shedule_task('data-cache-update', self.update)
+        self.evl.shedule_task(self._TASK_NAME, self.update)
 
     def stop_periodic_update(self):
-        self.evl.stop_task('data-cache-update')
+        self.evl.stop_task(self._TASK_NAME)
 
     def get_next(self, pair, start):
         self.logger.debug(f"get next data points from cache {pair}")

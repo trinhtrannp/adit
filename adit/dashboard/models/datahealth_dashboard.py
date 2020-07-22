@@ -18,13 +18,13 @@ from adit.dashboard.cache import DataMonitorCache
 
 env = Environment(
     loader=FileSystemLoader(
-        os.path.join(os.path.dirname(__file__), "templates")
+        os.path.join(os.path.dirname(__file__), "..", "templates")
     )
 )
 
 logger = logging.getLogger(__name__)
 
-BOKEH_THEME = Theme(os.path.join(os.path.dirname(__file__), "themes", "default.yaml"))
+BOKEH_THEME = Theme(os.path.join(os.path.dirname(__file__), "..", "themes", "default.yaml"))
 
 __all__ = ['DataHealthDashboard', 'datahealth_doc']
 

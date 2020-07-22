@@ -16,7 +16,7 @@ import distributed.http.statics as dask_statics
 import dask
 import toolz
 
-from adit.dashboard import datafeed_doc, datahealth_doc
+from adit.dashboard.models import datafeed_doc, datahealth_doc, modelperformance_doc, status_doc, utilities_doc
 from adit.dashboard.cache import *
 from adit.controllers.dask_controller import DaskController, EventLoopController
 
@@ -41,8 +41,7 @@ class AditWebApp:
     _INSTANCE = None
     _ADIT_PREFIX = "/"
     _TEMPLATE_VARIABLE = {
-        # "pages": ["data-feed", "data-health", "model-performance", "status"]
-        "pages": ["data-feed", "data-health"]
+        "pages": ["data-feed", "data-health", "model-performance", "status", "utilities"]
     }
 
     def __init__(self):
@@ -50,13 +49,16 @@ class AditWebApp:
         self.evl = EventLoopController.instance()
         self.tornado_loop = IOLoop.current()
         self.caches = {
-            'datamonitor': DataMonitorCache.instance()
+            'data-monitor': DataMonitorCache.instance(),
+            'dada-health': DataHealthCache.instance(),
+            'status': AditStatusCache.instance(),
+            'model-performance': ModelPerformanceCache.instance(),
         }
 
         # Append http routes config so that it will find statics data of adit
         import distributed.config
         dask_http_cfg = dask.config.get("distributed.scheduler.http")
-        dask_http_cfg['routes'].append('adit.dashboard.adit_dashboard')
+        dask_http_cfg['routes'].append('adit.dashboard.adit_webapp')
 
     def init(self):
         self.dask_ctr = DaskController.instance()
@@ -65,8 +67,9 @@ class AditWebApp:
         self.applications = {
             "/data-feed": datafeed_doc,
             "/data-health": datahealth_doc,
-            # "/modelperformance": workers_doc,
-            # "/status": events_doc,
+            "/model-performance": modelperformance_doc,
+            "/status": status_doc,
+            "/utilities": utilities_doc,
         }
         self.adit_app = self.get_application(applications=self.applications, server=self.dask_scheduler,
                                              prefix=self._ADIT_PREFIX, template_variables=self._TEMPLATE_VARIABLE)

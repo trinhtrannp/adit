@@ -2,12 +2,12 @@ from __future__ import absolute_import
 
 from adit.controllers import EventLoopController
 
-__all__ = ['DataHealthCache']
+__all__ = ['AditStatusCache']
 
 
-class DataHealthCache:
+class AditStatusCache:
     _INSTANCE = None
-    _TASK_NAME = "data-health-cache-update"
+    _TASK_NAME = "adit-status-cache-update"
 
     def __init__(self):
         self.evl = EventLoopController.instance()
@@ -25,5 +25,5 @@ class DataHealthCache:
     @classmethod
     def instance(cls):
         if cls._INSTANCE is None:
-            cls._INSTANCE = DataHealthCache()
+            cls._INSTANCE = AditStatusCache()
         return cls._INSTANCE

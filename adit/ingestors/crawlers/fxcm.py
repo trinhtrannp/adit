@@ -22,6 +22,8 @@ class FXCMCrawler:
 
     __RETRY_LIMIT = 3
 
+    CRAWLERS_REGISTER = []
+
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -31,6 +33,7 @@ class FXCMCrawler:
         self.enabled = self.config.get_bool("crawlers", "fxcm")
         self.runing_task = None
         self.fxcm_conn = None
+        self.paused = False
         if self.enabled:
             self.config_available = self.config.get_config("fxcm") is not None
             if self.config_available is not None:
@@ -40,6 +43,8 @@ class FXCMCrawler:
                 self.frequency = self.config.get_int("fxcm", "frequency", 60)  # default 5 mins
                 self.period = self.config.get_str("fxcm", "period", "m1")  # default 1 min
                 self.ccypairs = self.config.get_str("fxcm", "ccypairs", "").strip().split("\n")
+
+        self.CRAWLERS_REGISTER.append(self)
 
     def get_conn(self):
         if self.fxcm_conn is None:
@@ -102,11 +107,20 @@ class FXCMCrawler:
             pair = pair.strip()
             await self._crawl_pair(pair=pair, queue=queue)
 
+    def toggle_crawler(self):
+        self.paused = not self.paused
+        self.logger.info(f"FXCM crawler has been toggle {'to paused' if self.paused else 'back to normal'} state")
+
     async def _run(self, queue):
-        logging.info("starting fxcm data crawler")
+        self.logger.info("starting fxcm data crawler")
         while True:
             starttime = time.time()
             try:
+                if self.paused:
+                    self.logger.info(f"FXCM data crawler is currently in paused state.")
+                    await asyncio.sleep(self.frequency)
+                    continue
+
                 await self._crawl(queue=queue)
                 duration = time.time() - starttime
                 if (self.frequency - duration) < 0:

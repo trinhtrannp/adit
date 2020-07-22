@@ -18,13 +18,13 @@ from adit.dashboard.cache import DataMonitorCache
 
 env = Environment(
     loader=FileSystemLoader(
-        os.path.join(os.path.dirname(__file__), "templates")
+        os.path.join(os.path.dirname(__file__), "..", "templates")
     )
 )
 
 logger = logging.getLogger(__name__)
 
-BOKEH_THEME = Theme(os.path.join(os.path.dirname(__file__), "themes", "default.yaml"))
+BOKEH_THEME = Theme(os.path.join(os.path.dirname(__file__), "..", "themes", "default.yaml"))
 
 __all__ = ['DataFeedDashboard', 'datafeed_doc']
 
@@ -54,11 +54,13 @@ class DataFeedDashboard(DashboardComponent):
                 height=height,
                 x_range=DataRange1d(follow="end", follow_interval=20000000, range_padding=0),
                 y_range=DataRange1d(follow="end", follow_interval=1, range_padding=0.15),
+                output_backend="webgl",
                 **kwargs
             )
             pair_figure.line(source=self.source[pair], x="date", y="bidclose", color="red", legend_label='bid close')
             pair_figure.line(source=self.source[pair], x="date", y="askclose", color="blue", legend_label='ask close')
             pair_figure.legend.location = "bottom_right"
+            pair_figure.legend.click_policy = "hide"
             pair_figure.yaxis.axis_label = "Exchange Rate"
             pair_figure.xaxis.axis_label = "Time"
             pair_figure.xaxis.major_label_orientation = pi / 4
