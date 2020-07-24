@@ -43,6 +43,7 @@ class EventLoopController:
 
     def stop(self) -> None:
         self.loop.close()
+        self.loop.stop()
 
     @classmethod
     def instance(cls) -> EventLoopController:

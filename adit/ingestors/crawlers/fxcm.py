@@ -33,7 +33,7 @@ class FXCMCrawler:
         self.enabled = self.config.get_bool("crawlers", "fxcm")
         self.runing_task = None
         self.fxcm_conn = None
-        self.paused = False
+        self.paused = True
         if self.enabled:
             self.config_available = self.config.get_config("fxcm") is not None
             if self.config_available is not None:
@@ -127,7 +127,7 @@ class FXCMCrawler:
                     self.logger.warning("fxcm crawler is taking longer time than the configured period.")
                 else:
                     self.logger.info(f"fxcm crawler takes {duration}s to finished")
-                await asyncio.sleep((self.frequency - duration) if (self.frequency - duration) >= 0 else 0)
+                await asyncio.sleep(self.frequency)
             except Exception as ex:
                 self.logger.error("fxcm crawler has exception", exc_info=ex)
                 try:

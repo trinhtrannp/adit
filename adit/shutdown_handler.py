@@ -13,6 +13,13 @@ def atexit_handler():
     logger = logging.getLogger(__file__+".atexit_handler")
     logger.info("Shutting down Adit.")
     try:
+        logger.info("Shuting down AsyncIO Event Loop Controller...")
+        evl_ctr = EventLoopController.instance()
+        evl_ctr.stop()
+    except Exception as ex:
+        logger.error("Failed to shut down AsyncIO event loop controller...", exc_info=ex)
+
+    try:
         logger.info("Shutting down Adit Web App...")
         webapp_ctr = AditWebApp.instance()
         webapp_ctr.stop()
@@ -32,13 +39,6 @@ def atexit_handler():
         dfs_ctr.stop()
     except Exception as ex:
         logger.error("Failed to shut down DFS, please consider to shutdown DFS manually.", exc_info=ex)
-
-    try:
-        logger.info("Shuting down AsyncIO Event Loop Controller...")
-        evl_ctr = EventLoopController.instance()
-        evl_ctr.stop()
-    except Exception as ex:
-        logger.error("Failed to shut down AsyncIO event loop controller...", exc_info=ex)
 
     sys.exit(0)
 

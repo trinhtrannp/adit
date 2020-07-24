@@ -1,25 +1,25 @@
 [tool.poetry]
 name = "adit"
-version = "0.1.2"
+version = "0.1.3"
 description = "Adit is a toolbox that helps people collaborating on machine learning prototype easier."
 authors = ["Trinh Tran <trinhtran2151995@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-tensorflow = "^2.2.0"
 fxcmpy = "^1.2.6"
 python-socketio = "^4.6.0"
 pandas = "^1.0.4"
 dask = {extras = ["complete"], version = "^2.17.2"}
-oandapyV20 = "^0.6.3"
-v20 = "^3.0.25"
 distributed = "^2.18.0"
 click = "^7.1.2"
-faust = "^1.10.4"
 tiledb = "^0.6.5"
-request = "^2019.4.13"
 tqdm = "^4.46.1"
+requests = "^2.24.0"
+scipy = "^1.5.1"
+hurst = "^0.0.5"
+#oandapyV20 = "^0.6.3"
+#v20 = "^3.0.25"
 
 [tool.poetry.dev-dependencies]
 

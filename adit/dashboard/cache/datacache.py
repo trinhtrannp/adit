@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 import logging
 import numpy as np
-from adit.controllers import TileDBController, EventLoopController, TPOOL
 from collections import deque
 import asyncio
+
+from adit.controllers import TileDBController, EventLoopController, TPOOL
 
 __all__ = ['DataMonitorCache']
 

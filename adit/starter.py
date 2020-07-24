@@ -94,6 +94,16 @@ def start_ingestor():
     crawler.start()
 
 
+def start_dataprocessor():
+    logger = logging.getLogger(os.path.basename(__file__))
+    from adit.processor import MetricsCalculator
+    logger.info("Starting data processor....")
+
+    metric_cal = MetricsCalculator()
+    logger.info("Starting metric calculator....")
+    metric_cal.start()
+
+
 def start_event_loop() -> None:
     logger = logging.getLogger(os.path.basename(__file__))
     logger.info(f"Starting Main Loop...")
@@ -110,6 +120,7 @@ def start(mode: str = None, args: dict = None) -> None:
         start_dask_and_webapp(mode=mode)
         start_stream_engine(mode=mode, args=args)
         start_ingestor()
+        #start_dataprocessor()
         start_event_loop()
     except Exception as ex:
         logger.error(f"Failed to start Adit int {mode} mode", exc_info=ex)

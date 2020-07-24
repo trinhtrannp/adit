@@ -38,7 +38,6 @@ class DataFeedDashboard(DashboardComponent):
 
         self.cache = DataMonitorCache.instance()
         names = self.cache.data
-        # TODO: configurable pairs
         self.pairs = self._DEFAULT_PAIRS
         self.last = {}
         self.source = {}
@@ -61,6 +60,7 @@ class DataFeedDashboard(DashboardComponent):
             pair_figure.line(source=self.source[pair], x="date", y="askclose", color="blue", legend_label='ask close')
             pair_figure.legend.location = "bottom_right"
             pair_figure.legend.click_policy = "hide"
+            pair_figure.legend.background_fill_alpha = 0.0
             pair_figure.yaxis.axis_label = "Exchange Rate"
             pair_figure.xaxis.axis_label = "Time"
             pair_figure.xaxis.major_label_orientation = pi / 4

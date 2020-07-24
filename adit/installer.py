@@ -115,7 +115,7 @@ def init_bin_dir(workdir: str = None) -> None:
     bindir = os.path.join(workdir, 'bin')
     logger.info(f"Preparing {bindir}....")
     logger.info(f"Downloading dependencies to {bindir}.")
-    urls = [const.WEED_URLS[platform], const.ETCD_URLS[platform]]
+    urls = [const.WEED_URLS[platform]]
     executable_suffix = ".exe" if is_windows() else ""  # TODO: MacOS may have other suffix
     for url in urls:
         filename = url.split('/')[-1]
@@ -156,6 +156,10 @@ def install(workdir: str = None) -> None:
     if workdir is None:
         logger.info(f"No working directory specified. Will use {const.DEFAULT_WORK_DIR} instead.")
         workdir = const.DEFAULT_WORK_DIR
+
+    if ":" in workdir:
+        parts = workdir.split(":")
+        workdir = parts[0].lower() + ":" + parts[1]
 
     try:
         init_workdir(workdir=workdir)

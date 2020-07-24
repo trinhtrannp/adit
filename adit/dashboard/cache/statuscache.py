@@ -13,6 +13,10 @@ class AditStatusCache:
         self.evl = EventLoopController.instance()
         self.evl_loop = self.evl.get_loop()
 
+        self.data = {
+            'cpu': ''
+        }
+
     async def update(self, queue):
         pass
 

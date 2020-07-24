@@ -6,7 +6,8 @@ from subprocess import Popen
 
 from adit.config import Config
 from adit import constants as const
-from adit.controllers.evenloop_controller import EventLoopController
+from .evenloop_controller import EventLoopController
+from .pool_controller import TPOOL
 from adit.utils import *
 
 from dask.distributed import Scheduler, Worker, Client
@@ -161,12 +162,16 @@ class DaskClientWrapper:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__scheduler_ip = scheduler_ip
         self.__scheduler_port = scheduler_port
+        self.evl_loop = EventLoopController.instance().get_loop()
         self.client = None
 
-    async def start(self, queue, **kwargs):
+    def create_client(self):
         import socket
-        self.logger.info("Starting DASK client ....")
         self.client = Client(address=f'{self.__scheduler_ip}:{self.__scheduler_port}', timeout=30, name=socket.gethostname())
+
+    async def start(self, queue, **kwargs):
+        self.logger.info("Starting DASK client ....")
+        await self.evl_loop.run_in_executor(TPOOL, self.create_client)
 
     async def stop(self, queue, **kwargs):
         self.logger.info("Stoping DASK client")

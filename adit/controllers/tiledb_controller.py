@@ -18,14 +18,16 @@ class TileDBController:
 
     META_BUCKET = "s3://adit-meta"
     RAW_BUCKET = "s3://adit-raw"
-    CLEAN_BUCKET = "s3://adit-clean"
-    POLICY_BUCKET = "s3://adit-policy"
+    HEALTH_BUCKET = "s3://adit-health"
+
+    _RAW_DATA = "raw"
+    _HEALTH_DATA = "health"
+    _META_DATA = "meta"
 
     BUCKETS = {
-        "raw": RAW_BUCKET,
-        "clean": CLEAN_BUCKET,
-        "policy": POLICY_BUCKET,
-        "meta": META_BUCKET
+        _RAW_DATA: RAW_BUCKET,
+        _HEALTH_DATA: HEALTH_BUCKET,
+        _META_DATA: META_BUCKET
     }
 
     def __init__(self):
@@ -106,7 +108,11 @@ class TileDBController:
         array_existed = tiledb.highlevel.array_exists(uri)
 
         if not array_existed and data_df:
-            self.create_dataarray(uri)
+            if datatype == self._RAW_DATA:
+                self.create_dataarray(uri)
+            elif datatype == self._HEALTH_DATA:
+                self.create_datahealtharray(uri)
+
             array_existed=True
 
         tiledb.from_pandas(uri, df,
@@ -141,6 +147,7 @@ class TileDBController:
             domain = (None, None)
             with tiledb.open(self.get_uri(datatype, name)) as A:
                 domain = A.nonempty_domain()[0]
+                domain = [i.flat[0] for i in domain]
             return domain
         except Exception as ex:
             self.logger.error(f"failed to get domain of data {datatype} {name} from tiledb")
@@ -195,6 +202,32 @@ class TileDBController:
             offsets_filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000))
 
         tiledb.SparseArray.create(uri, arraySchema)
+
+    def create_datahealtharray(self, uri):
+        if uri.endswith("DAILY_METRICS"):
+            dimension = tiledb.Dim(name='date', domain=(np.datetime64('1900-01-01'), np.datetime64('2262-01-01')),
+                                   tile=np.timedelta64(365, 'ns'),
+                                   dtype=np.datetime64('', 'ns').dtype)
+
+            arraySchema = tiledb.ArraySchema(
+                domain=tiledb.Domain(dimension),
+                attrs=[
+                    tiledb.Attr(name='midclose', dtype='float64',
+                            filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000)),
+                    tiledb.Attr(name='logret', dtype='float64',
+                                filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000)),
+                    tiledb.Attr(name='logret_ema', dtype='float64',
+                                filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000)),
+                ],
+                cell_order='row-major',
+                tile_order='row-major',
+                capacity=10000,
+                sparse=True,
+                allows_duplicates=False,
+                coords_filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000),
+                offsets_filters=tiledb.FilterList([tiledb.GzipFilter(level=-1)], chunksize=512000))
+
+            tiledb.SparseArray.create(uri, arraySchema)
 
 
     @classmethod
