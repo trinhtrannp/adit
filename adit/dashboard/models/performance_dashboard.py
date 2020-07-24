@@ -76,12 +76,12 @@ class ModelPerformanceDashboard(DashboardComponent):
 
         self.acc_figure = figure(
             title="Accuracy",
-            height=350,
+            height=400,
             output_backend="webgl",
             sizing_mode="stretch_width",
         )
-        self.acc_figure.line(source=self.train_source, x="epoch", y="acc_train", color="blue", legend_label='train')
-        self.acc_figure.line(source=self.train_source, x="epoch", y="acc_test", color="green", legend_label='test')
+        self.acc_figure.line(source=self.train_source, x="epoch", y="acc_train", color="blue", legend_label='train', line_width=5)
+        self.acc_figure.line(source=self.train_source, x="epoch", y="acc_test", color="green", legend_label='test', line_width=5)
         self.acc_figure.legend.location = "bottom_right"
         self.acc_figure.legend.click_policy = "hide"
         self.acc_figure.legend.background_fill_alpha = 0.0
@@ -90,29 +90,29 @@ class ModelPerformanceDashboard(DashboardComponent):
 
         self.loss_figure = figure(
             title="Loss",
-            height=350,
+            height=400,
             output_backend="webgl",
             sizing_mode="stretch_width",
         )
-        self.loss_figure.line(source=self.train_source, x="epoch", y="loss_train", color="blue", legend_label='train')
-        self.loss_figure.line(source=self.train_source, x="epoch", y="loss_test", color="green", legend_label='test')
+        self.loss_figure.line(source=self.train_source, x="epoch", y="loss_train", color="blue", legend_label='train', line_width=5)
+        self.loss_figure.line(source=self.train_source, x="epoch", y="loss_test", color="green", legend_label='test', line_width=5)
         self.loss_figure.legend.location = "bottom_right"
         self.loss_figure.legend.click_policy = "hide"
         self.loss_figure.legend.background_fill_alpha = 0.0
-        self.loss_figure.yaxis.axis_label = "loss"
+        self.loss_figure.yaxis.axis_label = self.loss_function.upper()
         self.loss_figure.xaxis.axis_label = "Epoch"
 
         self.pred_figure = figure(
             title="Predict/Actual",
             x_axis_type="datetime",
-            height=350,
+            height=400,
             x_range=DataRange1d(follow="end", follow_interval=99999999999, range_padding=0),
             y_range=DataRange1d(follow="end", follow_interval=1, range_padding=0.15),
             output_backend="webgl",
             sizing_mode="stretch_width",
         )
-        self.pred_figure.line(source=self.predict_source, x="date", y="actual", color="blue", legend_label='actual')
-        self.pred_figure.line(source=self.predict_source, x="date", y="predict", color="green", legend_label='predict')
+        self.pred_figure.line(source=self.predict_source, x="date", y="actual", color="blue", legend_label='actual', line_width=5)
+        self.pred_figure.line(source=self.predict_source, x="date", y="predict", color="green", legend_label='predict', line_width=5)
         self.pred_figure.legend.location = "bottom_right"
         self.pred_figure.legend.click_policy = "hide"
         self.pred_figure.legend.background_fill_alpha = 0.0
@@ -138,7 +138,7 @@ class ModelPerformanceDashboard(DashboardComponent):
             self.pair_select,
             row(*[self.train_btn, self.train_from_datepk, self.train_to_datepk], **kw),
             row(*[self.predict_btn, self.predict_from_datepk, self.predict_to_datepk], **kw),
-            column(*[self.acc_figure, self.loss_figure, self.pred_figure], **kw)
+            column(*[self.loss_figure, self.pred_figure], **kw)
         ], sizing_mode='stretch_both')
 
         self.root = self.layout

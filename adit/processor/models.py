@@ -4,7 +4,6 @@ import logging
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Activation
 
@@ -115,13 +114,21 @@ class LSTMModel:
             logret_ema_data = data_df['logret_ema']
             logret_ema_data.index = data_df['date']
             logret_ema_data = logret_ema_data.values
-            x_0, y_0 = self.univariate_data(logret_ema_data, 0, len(logret_ema_data), self.history_size, self.future_size)
+            data = []
+            for i in range(self.history_size, len(logret_ema_data) + 1):
+                indices = range(i - self.history_size, i)
+                data.append(np.reshape(logret_ema_data[indices], (self.history_size, 1)))
+            x_0 = np.array(data)
             y_pred = self.model.predict(x_0)
             y_pred = np.concatenate((np.full((self.history_size - 1,), np.NaN), y_pred.T[0]))
 
             pred_df = pd.DataFrame(index=data_df.index)
             pred_df['date'] = data_df['date']
             pred_df['actual'] = logret_ema_data
+            #last_idx = len(pred_df.index)
+            #delta_time = pred_df['date'].iloc[-1] - pred_df['date'].iloc[-2]
+            #next_date = pred_df['date'].iloc[-1] + delta_time
+            #pred_df = pred_df.append(pd.DataFrame({'date': next_date}, index=[last_idx]))
             pred_df['predict'] = y_pred
 
             return pred_df

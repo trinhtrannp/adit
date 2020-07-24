@@ -99,9 +99,9 @@ class DataFeedDashboard(DashboardComponent):
                 self.source[pair].stream(self.get_data(pair), 240)
 
 
-def datafeed_doc(worker, extra, doc):
+def datafeed_doc(webserver, extra, doc):
     with log_errors():
-        datamonitor = DataFeedDashboard(worker, sizing_mode="stretch_both")
+        datamonitor = DataFeedDashboard(webserver, sizing_mode="stretch_both")
         doc.title = "Adit: FX Data Feed"
         add_periodic_callback(doc, datamonitor, 1000)
 
